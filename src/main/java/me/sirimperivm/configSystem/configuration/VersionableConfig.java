@@ -16,7 +16,7 @@ import java.util.List;
 
 public abstract class VersionableConfig extends Config {
 
-    protected String[] exemptedSections;
+    protected static String[] exemptedSections;
 
     public VersionableConfig(@NotNull String name, @NonNull File folder) throws IOException, InvalidConfigurationException {
         this(name, folder, new String[0]);
@@ -24,12 +24,12 @@ public abstract class VersionableConfig extends Config {
 
     public VersionableConfig(@NotNull String name, @NonNull File folder, String... exemptedSections) throws IOException, InvalidConfigurationException {
         super(name, folder);
-        this.exemptedSections = exemptedSections;
+        VersionableConfig.exemptedSections = exemptedSections;
 
         validate();
     }
 
-    private void validate() throws IOException {
+    public static void validate() throws IOException {
         InputStream originalFileStream = plugin.getResource("configs/" + name + ".yml");
         if (originalFileStream == null) return;
 
@@ -59,7 +59,7 @@ public abstract class VersionableConfig extends Config {
         if (changes > 0) save();
     }
 
-    private boolean keyIsExempted(String key) {
+    private static boolean keyIsExempted(String key) {
         for (String exemptedKey : exemptedSections) {
             if (key.equals(exemptedKey)) return true;
 

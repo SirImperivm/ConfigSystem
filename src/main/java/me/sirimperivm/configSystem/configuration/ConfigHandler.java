@@ -24,7 +24,7 @@ public class ConfigHandler {
         try {
             configurations.put("settings", new SettingConfig());
         } catch (Exception e) {
-            ConfigSystem.getLogger().severe("Failed to create some configuration.");
+            System.out.println("Failed to create some configuration.");
             e.printStackTrace();
         }
 

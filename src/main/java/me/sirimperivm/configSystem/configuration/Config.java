@@ -44,10 +44,10 @@ public abstract class Config {
         if (file.exists()) return;
         InputStream resourceStream = plugin.getResource("configs/" + name + ".yml");
         if (resourceStream == null) {
-            ConfigSystem.getLogger().warning("File " + name + " not found in plugin resources. Creating an empty file.");
+            System.out.println("File " + name + " not found in plugin resources. Creating an empty file.");
             boolean created = file.createNewFile();
             if (!created) {
-                ConfigSystem.getLogger().severe("Failed to create new file " + name + "!");
+                System.out.println("Failed to create new file " + name + "!");
             }
             return;
         }
