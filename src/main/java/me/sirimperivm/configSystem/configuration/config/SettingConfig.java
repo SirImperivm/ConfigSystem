@@ -2,12 +2,12 @@ package me.sirimperivm.configSystem.configuration.config;
 
 import lombok.Getter;
 import me.sirimperivm.configSystem.ConfigSystem;
-import me.sirimperivm.configSystem.configuration.ValidableConfig;
+import me.sirimperivm.configSystem.configuration.VersionableConfig;
 import org.bukkit.configuration.InvalidConfigurationException;
 
 import java.io.IOException;
 
-public class SettingConfig extends ValidableConfig {
+public class SettingConfig extends VersionableConfig {
 
     @Getter
     private static SettingConfig instance;

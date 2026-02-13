@@ -14,15 +14,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-public abstract class ValidableConfig extends Config {
+public abstract class VersionableConfig extends Config {
 
     protected String[] exemptedSections;
 
-    public ValidableConfig(@NotNull String name, @NonNull File folder) throws IOException, InvalidConfigurationException {
+    public VersionableConfig(@NotNull String name, @NonNull File folder) throws IOException, InvalidConfigurationException {
         this(name, folder, new String[0]);
     }
 
-    public ValidableConfig(@NotNull String name, @NonNull File folder, String... exemptedSections) throws IOException, InvalidConfigurationException {
+    public VersionableConfig(@NotNull String name, @NonNull File folder, String... exemptedSections) throws IOException, InvalidConfigurationException {
         super(name, folder);
         this.exemptedSections = exemptedSections;
 
