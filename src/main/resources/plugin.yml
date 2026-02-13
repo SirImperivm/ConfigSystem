@@ -1,0 +1,5 @@
+name: ConfigSystem
+version: '0.0.0'
+main: me.sirimperivm.configSystem.ConfigSystem
+api-version: '1.21'
+authors: [ SirImperivm_ ]

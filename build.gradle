@@ -1,0 +1,127 @@
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow' version '8.3.1'
+    id 'xyz.jpenilla.run-paper' version '3.0.2'
+    id 'com.github.ben-manes.versions' version '0.53.0'
+}
+
+group = 'me.sirimperivm'
+description = "ConfigSystem"
+
+def versionFile = file("$projectDir/version.txt")
+def distDir = file("$projectDir/dist")
+
+if (!versionFile.exists()) {
+    versionFile.text = "0.0.0"
+}
+
+def currentVersion = versionFile.text.trim()
+def (major, minor, patch) = currentVersion.tokenize('.').collect { it as int }
+
+def incrementPatch = {
+    patch++
+    def newVersion = "${major}.${minor}.${patch}"
+    versionFile.text = newVersion
+    return newVersion
+}
+
+version = currentVersion
+
+tasks.register("incrementVersion") {
+    doLast {
+        def newVersion = incrementPatch()
+        println "✅ Version incremented to: ${newVersion}"
+    }
+}
+
+tasks.register("distribute") {
+    dependsOn tasks.shadowJar
+
+    doLast {
+        distDir.mkdirs()
+
+        def jarFile = tasks.shadowJar.archiveFile.get().asFile
+        def targetFile = new File(distDir, "${project.description}-latest.jar")
+
+        println "📦 JAR File Distributed As: ${targetFile.path}"
+
+        jarFile.withInputStream { is ->
+            targetFile.withOutputStream {os ->
+                os << is
+            }
+        }
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "papermc-repo"
+        url = "https://repo.papermc.io/repository/maven-public/"
+    }
+}
+
+dependencies {
+    compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
+    compileOnly "org.projectlombok:lombok:1.18.42"
+    compileOnly fileTree("./libs")
+
+    annotationProcessor "org.projectlombok:lombok:1.18.42"
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('paper-plugin.yml') { expand props }
+}
+
+tasks {
+    runServer {
+        // Configure the Minecraft version for our task.
+        // This is the only required configuration besides applying the plugin.
+        // Your plugin's jar (or shadowJar if present) will be used automatically.
+        minecraftVersion("1.21")
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.shadowJar {
+    archiveClassifier.set('')
+    archiveFileName.set("${project.description}-${project.version}.jar")
+
+    relocate 'com.zaxxer', 'me.siridev.libs.com.zaxxer'
+    relocate 'com.github.stefvanschie.inventoryframework', 'me.siridev.libs.inventoryframework'
+    relocate 'co.aikar.commands', 'me.siridev.acf'
+    relocate 'co.aikar.locales', 'me.siridev.locales'
+
+    exclude('META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
+}
+
+tasks {
+    runServer {
+        // Configure the Minecraft version for our task.
+        // This is the only required configuration besides applying the plugin.
+        // Your plugin's jar (or shadowJar if present) will be used automatically.
+        minecraftVersion("1.21")
+    }
+}
+
+tasks.build {
+    dependsOn tasks.distribute
+}
+
+tasks.named('runServer') {
+    minecraftVersion '1.21.1'
+    runDirectory.set(layout.projectDirectory.dir('run'))
+    jvmArgs('-Xmx1G', '-XX:+UseG1GC')
+}
