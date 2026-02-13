@@ -1,46 +1,46 @@
 package me.sirimperivm.configSystem.configuration;
 
 import lombok.NonNull;
-import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public abstract class VersionableConfig extends Config {
 
-    protected static String[] exemptedSections;
+    private final String[] exemptedSections;
 
-    public VersionableConfig(@NotNull String name, @NonNull File folder) throws IOException, InvalidConfigurationException {
-        this(name, folder, new String[0]);
+    public VersionableConfig(@NotNull String name, @NonNull String subPath) {
+        this(name, subPath, new String[0]);
     }
 
-    public VersionableConfig(@NotNull String name, @NonNull File folder, String... exemptedSections) throws IOException, InvalidConfigurationException {
-        super(name, folder);
-        VersionableConfig.exemptedSections = exemptedSections;
-
+    public VersionableConfig(@NotNull String name, @NonNull String subPath, String... exemptedSections) {
+        super(name, subPath);
+        this.exemptedSections = exemptedSections;
         validate();
     }
 
-    public static void validate() throws IOException {
-        InputStream originalFileStream = plugin.getResource("configs/" + name + ".yml");
-        if (originalFileStream == null) return;
+    private void validate() {
+        String resourcePath = (file.getParentFile().equals(INSTANCE.getPlugin().getDataFolder())
+                ? ""
+                : INSTANCE.getPlugin().getDataFolder().toPath().relativize(file.getParentFile().toPath()).toString() + "/")
+                + name + ".yml";
 
-        FileConfiguration originalConf = YamlConfiguration.loadConfiguration(new InputStreamReader(originalFileStream));
+        InputStream stream = INSTANCE.getPlugin().getResource(resourcePath);
+        if (stream == null) return;
+
+        FileConfiguration original = YamlConfiguration.loadConfiguration(new InputStreamReader(stream));
+
+        Set<String> currentKeys = new HashSet<>(config.getKeys(true));
+        Set<String> originalKeys = original.getKeys(true);
+
         int changes = 0;
 
-        List<String> keys = new ArrayList<>(config.getKeys(true));
-        List<String> originalKeys = new ArrayList<>(originalConf.getKeys(true));
-
-        for (String key : new HashSet<>(keys)) {
-            if (keyIsExempted(key)) continue;
+        for (String key : currentKeys) {
+            if (isExempted(key)) continue;
             if (!originalKeys.contains(key)) {
                 config.set(key, null);
                 changes++;
@@ -48,22 +48,24 @@ public abstract class VersionableConfig extends Config {
         }
 
         for (String key : originalKeys) {
-            if (keyIsExempted(key)) continue;
-            if (!keys.contains(key)) {
-                Object originalValue = originalConf.get(key);
-                config.set(key, originalValue);
+            if (isExempted(key)) continue;
+            if (!currentKeys.contains(key)) {
+                config.set(key, original.get(key));
                 changes++;
             }
         }
 
-        if (changes > 0) save();
+        if (changes > 0) {
+            try {
+                save();
+            } catch (Exception ignored) {
+            }
+        }
     }
 
-    private static boolean keyIsExempted(String key) {
-        for (String exemptedKey : exemptedSections) {
-            if (key.equals(exemptedKey)) return true;
-
-            if (key.startsWith(exemptedKey + ".")) return true;
+    private boolean isExempted(String key) {
+        for (String ex : exemptedSections) {
+            if (key.equals(ex) || key.startsWith(ex + ".")) return true;
         }
         return false;
     }

@@ -1,5 +1,0 @@
-name: ConfigSystem
-version: ${version}
-main: me.sirimperivm.configSystem.ConfigSystem
-api-version: '1.21'
-authors: [ SirImperivm_ ]
