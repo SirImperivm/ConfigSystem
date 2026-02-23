@@ -41,8 +41,6 @@ public abstract class Config {
         }
 
         this.config = YamlConfiguration.loadConfiguration(file);
-
-        INSTANCE.registerConfiguration(this);
     }
 
     public void save() throws IOException {
