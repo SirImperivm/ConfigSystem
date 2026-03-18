@@ -1,7 +1,6 @@
 package me.sirimperivm.configSystem.configuration;
 
 import lombok.Getter;
-import lombok.NonNull;
 import me.sirimperivm.configSystem.ConfigSystem;
 import me.sirimperivm.configSystem.util.ColorUtil;
 import me.sirimperivm.configSystem.util.StringUtil;
@@ -22,10 +21,13 @@ public abstract class Config {
 
     protected final String name;
     protected final File file;
-    protected FileConfiguration config;
+    protected FileConfiguration configuration;
+
+    private static Config config;
 
     public Config(@NotNull String name, String subPath) {
         this.name = name;
+        config = this;
 
         File folder = subPath == null || subPath.isEmpty()
                 ? INSTANCE.getPlugin().getDataFolder()
@@ -40,15 +42,15 @@ public abstract class Config {
             INSTANCE.getPlugin().saveResource(resourcePath, false);
         }
 
-        this.config = YamlConfiguration.loadConfiguration(file);
+        this.configuration = YamlConfiguration.loadConfiguration(file);
     }
 
     public void save() throws IOException {
-        config.save(file);
+        configuration.save(file);
     }
 
     public void reload() {
-        this.config = YamlConfiguration.loadConfiguration(file);
+        this.configuration = YamlConfiguration.loadConfiguration(file);
     }
 
     public String getPath() {
@@ -60,20 +62,20 @@ public abstract class Config {
     }
 
     public String resolvePlaceholders(String path, String def, String... placeholders) {
-        return StringUtil.resolvePlaceholders(config.getString(path, def), placeholders);
+        return StringUtil.resolvePlaceholders(configuration.getString(path, def), placeholders);
     }
 
     public String resolvePlaceholders(String path, String def, Map<String, Object> placeholders) {
-        return StringUtil.resolvePlaceholders(config.getString(path, def), placeholders);
+        return StringUtil.resolvePlaceholders(configuration.getString(path, def), placeholders);
     }
 
     public String wrapString(String path) {
-        Object o = config.get(path);
+        Object o = configuration.get(path);
         return o instanceof String ? (String) o : String.valueOf(o);
     }
 
     public String wrapString(String path, Object def) {
-        return config.get(path) == null ? String.valueOf(def) : wrapString(path);
+        return configuration.get(path) == null ? String.valueOf(def) : wrapString(path);
     }
 
     public String getTranslatedString(String path) {
@@ -85,7 +87,7 @@ public abstract class Config {
     }
 
     public String getTranslatedString(String path, String def, String... placeholders) {
-        return ColorUtil.parse(config.getString(path, def), placeholders).toString();
+        return ColorUtil.parse(configuration.getString(path, def), placeholders).toString();
     }
 
     public String getTranslatedString(String path, Map<String, Object> placeholders) {
@@ -93,7 +95,7 @@ public abstract class Config {
     }
 
     public String getTranslatedString(String path, String def, Map<String, Object> placeholders) {
-        return ColorUtil.parse(config.getString(path, def), placeholders).toString();
+        return ColorUtil.parse(configuration.getString(path, def), placeholders).toString();
     }
 
     public Component getComponent(String path) {
@@ -105,7 +107,7 @@ public abstract class Config {
     }
 
     public Component getComponent(String path, String def, String... placeholders) {
-        return ColorUtil.parse(config.getString(path, def), placeholders);
+        return ColorUtil.parse(configuration.getString(path, def), placeholders);
     }
 
     public Component getComponent(String path, Map<String, Object> placeholders) {
@@ -113,6 +115,10 @@ public abstract class Config {
     }
 
     public Component getComponent(String path, String def, Map<String, Object> placeholders) {
-        return ColorUtil.parse(config.getString(path, def), placeholders);
+        return ColorUtil.parse(configuration.getString(path, def), placeholders);
+    }
+
+    public static Config get() {
+        return config;
     }
 }

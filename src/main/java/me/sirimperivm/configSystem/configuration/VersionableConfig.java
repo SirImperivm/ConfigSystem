@@ -11,15 +11,15 @@ import java.util.*;
 
 public abstract class VersionableConfig extends Config {
 
-    private final String[] exemptedSections;
+    private final String[] excludedSections;
 
     public VersionableConfig(@NotNull String name, @NonNull String subPath) {
         this(name, subPath, new String[0]);
     }
 
-    public VersionableConfig(@NotNull String name, @NonNull String subPath, String... exemptedSections) {
+    public VersionableConfig(@NotNull String name, @NonNull String subPath, String... excludedSections) {
         super(name, subPath);
-        this.exemptedSections = exemptedSections;
+        this.excludedSections = excludedSections;
         validate();
     }
 
@@ -34,7 +34,7 @@ public abstract class VersionableConfig extends Config {
 
         FileConfiguration original = YamlConfiguration.loadConfiguration(new InputStreamReader(stream));
 
-        Set<String> currentKeys = new HashSet<>(config.getKeys(true));
+        Set<String> currentKeys = new HashSet<>(configuration.getKeys(true));
         Set<String> originalKeys = original.getKeys(true);
 
         int changes = 0;
@@ -42,7 +42,7 @@ public abstract class VersionableConfig extends Config {
         for (String key : currentKeys) {
             if (isExempted(key)) continue;
             if (!originalKeys.contains(key)) {
-                config.set(key, null);
+                configuration.set(key, null);
                 changes++;
             }
         }
@@ -50,7 +50,7 @@ public abstract class VersionableConfig extends Config {
         for (String key : originalKeys) {
             if (isExempted(key)) continue;
             if (!currentKeys.contains(key)) {
-                config.set(key, original.get(key));
+                configuration.set(key, original.get(key));
                 changes++;
             }
         }
@@ -64,7 +64,7 @@ public abstract class VersionableConfig extends Config {
     }
 
     private boolean isExempted(String key) {
-        for (String ex : exemptedSections) {
+        for (String ex : excludedSections) {
             if (key.equals(ex) || key.startsWith(ex + ".")) return true;
         }
         return false;
