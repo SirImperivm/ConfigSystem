@@ -1,7 +1,8 @@
 plugins {
-    id 'java'
-    id 'com.gradleup.shadow' version '8.3.1'
-    id 'com.github.ben-manes.versions' version '0.53.0'
+    id 'java-library'
+    id 'maven-publish'
+    id 'com.gradleup.shadow' version '9.6.1'
+    id 'io.github.ben-manes.versions' version '0.64.0'
 }
 
 group = 'me.sirimperivm'
@@ -14,41 +15,28 @@ if (!versionFile.exists()) {
     versionFile.text = "0.0.0"
 }
 
-def currentVersion = versionFile.text.trim()
-def (major, minor, patch) = currentVersion.tokenize('.').collect { it as int }
-
-def incrementPatch = {
-    patch++
-    def newVersion = "${major}.${minor}.${patch}"
-    versionFile.text = newVersion
-    return newVersion
-}
-
-version = currentVersion
+version = versionFile.text.trim()
 
 tasks.register("incrementVersion") {
+    def file = versionFile
     doLast {
-        def newVersion = incrementPatch()
+        def (major, minor, patch) = file.text.trim().tokenize('.').collect { it as int }
+        def newVersion = "${major}.${minor}.${patch + 1}"
+        file.text = newVersion
         println "✅ Version incremented to: ${newVersion}"
     }
 }
 
-tasks.register("distribute") {
-    dependsOn tasks.shadowJar
+tasks.register("distribute", Copy) {
+    from tasks.named('shadowJar').flatMap { it.archiveFile }
 
+    def targetName = "${project.description}-latest.jar"
+    into distDir
+    rename { targetName }
+
+    def target = new File(distDir, targetName).path
     doLast {
-        distDir.mkdirs()
-
-        def jarFile = tasks.shadowJar.archiveFile.get().asFile
-        def targetFile = new File(distDir, "${project.description}-latest.jar")
-
-        println "📦 JAR File Distributed As: ${targetFile.path}"
-
-        jarFile.withInputStream { is ->
-            targetFile.withOutputStream {os ->
-                os << is
-            }
-        }
+        println "📦 JAR File Distributed As: ${target}"
     }
 }
 
@@ -56,6 +44,7 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
+    withSourcesJar()
 }
 
 repositories {
@@ -66,23 +55,35 @@ repositories {
     }
 }
 
-dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
-    compileOnly "org.projectlombok:lombok:1.18.42"
-    compileOnly fileTree("./libs")
+def lombokVersion = "1.18.48"
 
-    annotationProcessor "org.projectlombok:lombok:1.18.42"
+dependencies {
+    compileOnly "io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT"
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+shadow {
+    addShadowVariantIntoJavaComponent = false
 }
 
 tasks.shadowJar {
-    archiveClassifier.set('')
-    archiveFileName.set("${project.description}-${project.version}.jar")
+    archiveClassifier.set('all')
 
     exclude('META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
 }
 
 tasks.build {
